@@ -1,6 +1,6 @@
 ### FileType Identification Front End
 
-Using BootStrap and jQuery frameworks, we created a minimal viable frontend for our FileType Identification. The site can be accessed using this [link](ec2-184-72-117-114.compute-1.amazonaws.com).
+Using BootStrap and jQuery frameworks, we created a minimal viable frontend for our FileType Identification. The site can be accessed using this [link](http://ec2-184-72-117-114.compute-1.amazonaws.com).
 
 #### 1) Type of Inputs
 This website can take use of several typesof inputs. They are:
