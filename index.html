@@ -1,0 +1,255 @@
+<!--
+Document   : index
+Created on : 27 Aug, 2019, 10:27:53 AM
+Author     : Pratik V
+-->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>FileType Indentification</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="jumbotron jumbotron-fluid">
+    <div class="container">
+        <h1 class="display-4">File Type Identification</h1>
+        <p class="lead">Rendering the file type information using filenames.</p>
+    </div>
+</div>
+<div align="center">
+    <div class="card" style="width: 25rem;">
+        <div class="card-body">
+            <h5 class="card-title">Enter your filenames</h5>
+            <p class="card-text">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text" id="basic-addon1">Filenames</span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="data.csv, run.py, etc." aria-describedby="basic-addon1" id="MyFile">
+                    </div>
+                    <button type="submit" class="btn btn-primary" name="submit" onclick="setPageNoToOne()">Get File Details</button>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div id="showFileTypeDetails" aria-rowindex="50%" style="margin:0.5em;"></div>
+    <script>
+        var pageNumber = 1;
+        var pageSize = 5;
+        var publicDomain = "http://54.242.70.172:8080";
+
+        function getDetails()
+        {
+            console.log('<--------Entered getDetails()-------->');
+            var filenames = document.getElementById("MyFile").value;
+            filenames = filenames.split(',');
+            var uniqueExtensions = new Array();
+            for(var i=0;i<filenames.length;i++) {
+                filenames[i] = filenames[i].substring(filenames[i].indexOf('.'));
+                if(!uniqueExtensions.includes(filenames[i]))
+                    uniqueExtensions.push(filenames[i]);
+            }
+            console.log('<-------\n'+uniqueExtensions.toString()+'\n--------->');
+            const number = uniqueExtensions.length;
+
+            if(number > 1) {
+                var jsonFile = JSON.stringify({size: number, extensionQueryList: uniqueExtensions});
+                console.log(jsonFile);
+                RestPostMulti(jsonFile);
+            }
+            else
+                RestPostSingle(uniqueExtensions[0]);
+            return true;
+        }
+
+        var RestPostSingle = function(extensionString) {
+            $.ajax({
+              "async": true,
+              "crossDomain": true,
+              "url": publicDomain+"/search/single?queryExtension="+extensionString,
+              "method": "POST",
+              "headers": {
+                "Accept": "*/*",
+                "Cache-Control": "no-cache",
+                "cache-control": "no-cache"
+              },
+              "success": function(data) {
+                  document.getElementById('showFileTypeDetails').innerHTML = "";
+                  data2 = JSON.stringify(data);
+                  console.log(data2);
+                  var objOfJSON = data.extensionResponseList[0];
+
+                  var showOnTag = '<div align="center"><div class="card" style="width:50em; margin-bottom:2em;"'+
+                                    '<div class="card-body">'+
+                                    '<h5 class="card-title" style="margin: 0.5em;">Extension:</h5>';
+                  showOnTag += '<h5 style="margin:0.5em;">'+ objOfJSON.extensionString+'</h5>';
+                  showOnTag += getCurrentFileDetails(objOfJSON) + '</div>';
+                  document.getElementById('showFileTypeDetails').innerHTML = showOnTag;
+              },
+                "error": function (jqXHR, textStatus, errorThrown) {
+                        alert(jqXHR.status + ' ' + jqXHR.responseText);
+                    }
+            });
+        };
+
+        function setPageNoToOne()
+        {
+            pageNumber = 1;
+            getDetails();
+        }
+
+        function decPageNo()
+        {
+            pageNumber -= 1;
+            getDetails();
+        }
+
+        function incPageNo()
+        {
+            pageNumber += 1;
+            getDetails();
+        }
+
+        function setPageNoToLast() {
+            pageNumber = -1;
+            getDetails();
+        }
+
+        function getPageNumbers(isLastPage)
+        {
+            var showOnTag = "";
+            var showPreviousAndFirst = "";
+            var showNextAndLast = "";
+            if(pageNumber === 1)
+                showPreviousAndFirst += " disabled";
+            if(isLastPage === 1)
+                showNextAndLast += " disabled";
+            showOnTag += '<nav aria-label="Page navigation example">'+
+                            '<ul class="pagination justify-content-center">'+
+                                '<li class="page-item'+showPreviousAndFirst+'">'+
+                                    '<button class="page-link" onclick="setPageNoToOne()">First</button>'+
+                                '</li>'+
+                                '<li class="page-item'+showPreviousAndFirst+'">' +
+                                    '<button class="page-link" onclick="decPageNo()">Previous</button></li>'+
+                                '<li class="page-item">' +
+                                    '<button class="page-link">'+pageNumber+'</button>' +
+                                '</li>'+
+                                '<li class="page-item'+showNextAndLast+'">' +
+                                    '<button class="page-link" onclick="incPageNo()">Next</button>' +
+                                '</li>'+
+                                '<li class="page-item'+showNextAndLast+'">'+
+                                    '<button class="page-link" onclick="setPageNoToLast()">Last</button>'+
+                                '</li>'+
+                            '</ul>'+
+                        '</nav>';
+            return showOnTag;
+        }
+
+        var RestPostMulti = function(jsonFile) {
+            console.log('<-------------Inside RestPost()---------------->');
+            $.ajax({
+              "async": true,
+              "crossDomain": true,
+              "url": publicDomain+"/search/pagewise/lastpage?pageNo="+pageNumber+'&pageSize='+pageSize,
+              "method": "POST",
+                // "dataType":"json",
+              "headers": {
+                "Content-Type": "application/json",
+                "Accept": "*/*",
+                "Cache-Control": "no-cache",
+                "cache-control": "no-cache"
+              },
+
+              "data": jsonFile,
+                "success": function (data) {
+                  document.getElementById('showFileTypeDetails').innerHTML = "";
+                    data2 = JSON.stringify(data);
+                    console.log(data2);
+                    var lengthOfJSON = data.size;
+                    console.log(lengthOfJSON);
+                    var jsonObjects = data.extensionResponseList;
+                    pageNumber = data.pageNo;
+                    var isLastPage = data.isLastPage;
+                    var showOnTag = "";
+                    showOnTag += getPageNumbers(isLastPage,pageNumber);
+                    for (var i = 0; i < lengthOfJSON; ++i) {
+                        var extensionString = jsonObjects[i].extensionString;
+                        var doShow = "";
+
+                        console.log('<-------- ' + extensionString + ' ----------->');
+                        if (i === 0) {
+                            showOnTag += '<div class="card" style="width:50em; margin:1em 0em 1em 13em;"'+
+                                    '<div class="card-body">'+
+                                    '<h5 class="card-title" style="margin: 0.5em;">Extensions:</h5>'+
+                                '<div class="accordion" style="width=50%;" id="accordionExample">';
+                            doShow = " show";
+                        }
+                        showOnTag += '<div class="card">' +
+                            '    <div class="card-header" id="heading' + i + '">' +
+                            '      <h2 class="mb-0">' +
+                            '        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse' + i + '" aria-expanded="true" aria-controls="collapse' + i + '">' +
+                            '<span style="text-align: left;">'+extensionString +'</span>'+
+                            '        </button>' +
+                            '      </h2>' +
+                            '    </div>';
+
+                        showOnTag += '<div id="collapse' + i + '" class="collapse' + doShow + '" aria-labelledby="heading' + i + '" data-parent="#accordionExample">' +
+                            '      <div class="card-body">';
+                        showOnTag += getCurrentFileDetails(jsonObjects[i]);
+                        showOnTag += '</div>';
+                        if (i === lengthOfJSON - 1)
+                            showOnTag += '</div></div></div>';
+                    }
+                    showOnTag += getPageNumbers(isLastPage,pageNumber);
+                    document.getElementById('showFileTypeDetails').innerHTML = showOnTag;
+                },
+                "error": function (jqXHR, textStatus, errorThrown) {
+                        alert(jqXHR.status + ' ' + jqXHR.responseText);
+                    }
+                });
+        };
+        function getCurrentFileDetails(objOfJSON)
+        {
+            var category = objOfJSON.category;
+            var shortDescription = objOfJSON.shortDescription;
+            var developer = objOfJSON.developer;
+            var information = objOfJSON.information;
+            var usefulLink = objOfJSON.usefulLink;
+            var programList = objOfJSON.programList;
+            var showOnTag = "";
+            if(name!=null && name!=='N/A')
+                showOnTag += '<div style="font-weight: bold;display:inline;margin:0.5em;">Name:</div> '+ shortDescription+ '<br>';
+            if(category!=null && category!=='N/A')
+                showOnTag += '<div style="font-weight: bold;display:inline;margin:0.5em;">Category:</div> '+ category+ '<br>';
+            if(developer!=null && developer!=='N/A')
+                showOnTag += '<div style="font-weight: bold;display:inline;margin:0.5em;">Developer:</div> '+ developer+ '<br>';
+            if(information!=null && information!=='N/A')
+                showOnTag += '<div style="font-weight: bold;display:inline;margin:0.5em;">What is known about it? :</div> '+ information+ '<br>';
+            if(programList!=null && programList!=='N/A')
+            {
+                var lengthOfProgramList = programList.length;
+                showOnTag += '<div style="font-weight: bold;display:inline;margin:0.5em;">Program Associated:</div> ';
+                for(var j=0;j<lengthOfProgramList;j++)
+                {
+                    if(j===lengthOfProgramList-1)
+                        showOnTag += programList[j]+'<br>';
+                    else
+                        showOnTag += programList[j] + ', ';
+                }
+            }
+            if(usefulLink!=null && usefulLink!=='N/A')
+                showOnTag += '<div style="font-weight: bold;display:inline;margin:0.5em;">More resources:</div> <a href="'+usefulLink+'">'+usefulLink+'</a><br>';
+            showOnTag += '</div></div>';
+            return showOnTag;
+        }
+    </script>
+</body>
+</html>
